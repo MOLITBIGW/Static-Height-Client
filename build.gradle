@@ -1,0 +1,68 @@
+plugins {
+    id 'fabric-loom' version '1.5-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    // Loom automatically adds necessary repos for Minecraft and Fabric.
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:1.19.2"
+    mappings "net.fabricmc:yarn:1.19.2+build.15:v2"  // Example Yarn mapping for 1.19.2, adjust build number if needed
+    modImplementation "net.fabricmc:fabric-loader:0.14.21"  // Example loader version for 1.19.2
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.75.1+1.19.2"  // Fabric API for 1.19.2
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", "1.19.2"
+    inputs.property "loader_version", "0.14.21"
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "minecraft_version": "1.19.2",
+                "loader_version": "0.14.21"
+    }
+}
+
+def targetJavaVersion = 17
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        // Add your publishing repositories here
+    }
+}
